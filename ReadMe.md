@@ -1,7 +1,3 @@
----
-output: html_document
----
-
 # Market Dashboard
 
 ## Overview
@@ -14,8 +10,8 @@ The database simulates a supermarket data management system. It contains multipl
 
 1.   Customers Table
 
-    Stores customer details with location data.
-
+   Stores customer details with location data.
+    
     -   `CustomerID`: Unique identifier for customers.
 
     -   `CustomerName`: Full name of the customer.
@@ -219,7 +215,7 @@ The database simulates a supermarket data management system. It contains multipl
 
 Berkin Aytekin
 
-aytekin.berkin\@gmail.com
+aytekin.berkin@gmail.com
 
 ## References
 
