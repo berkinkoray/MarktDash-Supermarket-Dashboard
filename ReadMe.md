@@ -1,3 +1,7 @@
+---
+output: html_document
+---
+
 # Market Dashboard
 
 ## Overview
@@ -8,10 +12,10 @@ MarktDash is an interactive R Shiny dashboard application for visualizing market
 
 The database simulates a supermarket data management system. It contains multiple interconnected tables representing customers, products, suppliers, transactions and transaction details. I have generated using Big Basket Grocery dataset [1] .
 
-1.   Customers Table
+1.  Customers Table
 
-   Stores customer details with location data.
-    
+    Stores customer details with location data.
+
     -   `CustomerID`: Unique identifier for customers.
 
     -   `CustomerName`: Full name of the customer.
@@ -56,7 +60,7 @@ The database simulates a supermarket data management system. It contains multipl
     -   A sample:
 
         | ProductCode | ProductName | Category | SubCategory | Brand | SalePrice | StockNumber |
-        |----|----|----|----|----|----|----|
+        |-----------|-----------|-----------|-----------|-----------|-----------|-----------|
         | 1 | Garlic Oil - Vegetarian Capsule 500 mg | Beauty & Hygiene | Hair Care | Sri Sri Ayurveda | 220.0 | 394 |
         | 2 | Water Bottle - Orange | Kitchen, Garden & Pets | Storage & Accessories | Mastercook | 180.0 | 989 |
 
@@ -77,7 +81,7 @@ The database simulates a supermarket data management system. It contains multipl
     -   A sample:
 
         | SupplierCode | SupplierName | SupplierAddress | SupplierPhoneNo | SupplyTime |
-        |----|----|----|----|----|
+        |---------------|---------------|---------------|---------------|---------------|
         | SUP500 | Rice-Young | 781 Andrew Alley Suite 185, ... | +1-555-142-5675 | 2 |
         | SUP966 | Gonzalez, Potter and Morgan | 133 Pam Orchard, West Emily, HI ... | +1-555-155-4848 | 3 |
 
@@ -123,7 +127,7 @@ The database simulates a supermarket data management system. It contains multipl
 
 ### 1. Home Page
 
-![](images/clipboard-843163611.png){width="540"}
+![](images/clipboard-3831736621.png){width="616"}
 
 -   Displays total revenue, total customers, total transactions, average product rating as information boxes.
 
@@ -133,11 +137,13 @@ The database simulates a supermarket data management system. It contains multipl
 
 ### 2. Product Page
 
-![](images/clipboard-1440191455.png){width="529"}
+![](images/clipboard-1811890486.png){width="618"}
 
 1.  Product Insights
 
     -   This page contains bubble chart of products with low stock and close expiry date, comparison plot of rating and sale prices, all products as data table and product list with rating and category filter.
+
+        ![](images/clipboard-662014593.png){width="581"}
 
 2.  Add Product
 
@@ -147,19 +153,19 @@ The database simulates a supermarket data management system. It contains multipl
 
 ### 3. Income Insights Page
 
-![](images/clipboard-1706237717.png){width="531"}
+![](images/clipboard-1937691103.png){width="616"}
 
 -   Contains horizontal histogram of top revenues by different categories and a line plot showing daily revenue over transactions.
 
 ### 4. Customer Page
 
-![](images/clipboard-3575268956.png){width="541"}
+![](images/clipboard-4230414057.png){width="626"}
 
 -   Customer page has information about top purchasing customers with their details and total spent with adjustable purchasing threshold, interactive map of billing addresses.
 
 ### 5. Suppliers Page
 
-![](images/clipboard-3989406061.png){width="553"}
+![](images/clipboard-1366716439.png){width="630"}
 
 -   Product count by supplier with histogram.
 
@@ -167,7 +173,7 @@ The database simulates a supermarket data management system. It contains multipl
 
 ### 6. Tools Page
 
-![](images/clipboard-3770194585.png){width="552"}
+![](images/clipboard-4209020775.png)
 
 -   Sales forecasting using past transactions, using prophet package.
 
@@ -215,7 +221,7 @@ The database simulates a supermarket data management system. It contains multipl
 
 Berkin Aytekin
 
-aytekin.berkin@gmail.com
+aytekin.berkin\@gmail.com
 
 ## References
 

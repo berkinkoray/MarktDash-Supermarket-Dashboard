@@ -43,10 +43,14 @@ server <- function(input, output, session) {
     
     data <- dbGetQuery(connect2DB, query)
     
-    plot <- ggplot(data, aes(x = reorder(Category, TotalRevenue), y = TotalRevenue)) +
-            geom_bar(stat = "identity", fill = "#A3E3CF") +
+    palette <- brewer.pal(n = min(11, nrow(data)), name = "Set3")
+    data$CategoryColor <- palette[as.numeric(factor(data$Category))]
+    
+    plot <- ggplot(data, aes(x = reorder(Category, TotalRevenue), y = TotalRevenue, fill = Category)) +
+            geom_bar(stat = "identity") +
+            scale_fill_manual(values = palette) +
             coord_flip() +
-            labs(x = "Category", y = "Total Revenue") +
+            labs(x = "Category", y = "Total Revenue", fill = "Category") +
             theme_minimal()
     
     ggplotly(plot)
@@ -68,7 +72,7 @@ server <- function(input, output, session) {
     
     # Object for revenue plot
     revenue_plot <- ggplot(data, aes(x = as.Date(Day), y = TotalRevenue)) +
-                    geom_line(color = "#20C997") +
+                    geom_line(color = "darkgreen") +
                     labs(x = "Date", y = "Total Revenue") +
                     theme_minimal() +
                     theme(axis.text.x = element_text(angle = 45, hjust = 1))
@@ -89,29 +93,52 @@ server <- function(input, output, session) {
   })
   
   # Billing Addresses
+  # BILLING ADDRESSES MAP
   output$customerMap <- renderLeaflet({
     query <- "
-      SELECT CustomerID, Latitude, Longitude 
-      FROM Customers
-      WHERE Latitude IS NOT NULL AND Longitude IS NOT NULL
-      "
+    SELECT c.CustomerID, c.Latitude, c.Longitude, SUM(t.TotalAmount) AS TotalSpent 
+    FROM Customers c
+    JOIN Transactions t ON c.CustomerID = t.CustomerID
+    WHERE Latitude IS NOT NULL AND Longitude IS NOT NULL
+    GROUP BY c.CustomerID, c.Latitude, c.Longitude
+    "
     customer_locations <- dbGetQuery(connect2DB, query)
     
-    # Turn into numeric data
     customer_locations$Latitude <- as.numeric(customer_locations$Latitude)
     customer_locations$Longitude <- as.numeric(customer_locations$Longitude)
+    customer_locations$TotalSpent <- as.numeric(customer_locations$TotalSpent)
+    
+    max_radius <- 30
+    min_radius <- 8
+    
+    customer_locations$ScaledRadius <- scales::rescale(
+      customer_locations$TotalSpent, to = c(min_radius, max_radius)
+    )
+    
+    color_palette <- colorNumeric(
+      palette = viridisLite::viridis(9),
+      domain = customer_locations$TotalSpent
+    )
     
     # Leaflet map
     leaflet(customer_locations) %>%
       addTiles() %>%
       addCircleMarkers(
         ~Longitude, ~Latitude,
-        label = ~paste("Customer ID:", CustomerID),
-        radius = 8,
-        color = "#9d00ff",
+        label = ~paste("Customer ID:", CustomerID, "Total Spent:", TotalSpent),
+        radius = ~ScaledRadius,
+        color = ~color_palette(TotalSpent),
+        fillColor = ~color_palette(TotalSpent),
         fillOpacity = 0.6
       ) %>%
-      setView(lng = -105.9378, lat = 35.6870, zoom = 12)
+      addLegend(
+        "bottomright",
+        pal = color_palette,
+        values = ~TotalSpent,
+        title = "Total Spent",
+        labFormat = labelFormat(prefix = "$")
+      ) %>%
+      setView(lng = -105.9378, lat = 35.6870, zoom = 13) # Ensure %>% is here
   })
   
   # PRODUCT PAGE--------------------------------
@@ -194,13 +221,17 @@ server <- function(input, output, session) {
     ) 
     data <- dbGetQuery(connect2DB, query)
     
-    ggplot(data, aes(x = Rating, y = SalePrice)) +
-      geom_point(size = 3, color = "purple", alpha = 0.7) +
+    plot <- ggplot(data, aes(x = Rating, y = SalePrice, color = SalePrice)) +
+      geom_point(size = 3, alpha = 0.7) +
+      scale_color_gradient(low = "#FFB347", high = "#2C3E50")+
       labs(
         x = "Rating",
-        y = "Sale Price"
+        y = "Sale Price",
+        color = "Sale Price"
       ) +
       theme_minimal()
+    
+    ggplotly(plot)
   })
   
   # ADD PRODUCT TO DATABASE
@@ -249,22 +280,27 @@ server <- function(input, output, session) {
       WHERE DATE(t.TransactionDate) BETWEEN '%s' AND '%s'
       GROUP BY p.Category;",
                      input$dateRange[1],
-                     input$dateRange[2]
+                     input$dateRange[2],
+                     input$category
     )
     
     data <- dbGetQuery(connect2DB, query)
     
-    plot <- ggplot(data, aes(x = reorder(Category, TotalRevenue), y = TotalRevenue)) +
-      geom_bar(stat = "identity", fill = "#A3E3CF") +
+    palette <- brewer.pal(n = min(11, nrow(data)), name = "Set3")
+    data$CategoryColor <- palette[as.numeric(factor(data$Category))]
+    
+    plot <- ggplot(data, aes(x = reorder(Category, TotalRevenue), y = TotalRevenue, fill = Category)) +
+      geom_bar(stat = "identity") +
+      scale_fill_manual(values = palette) +
       coord_flip() +
-      labs(x = "Category", y = "Total Revenue") +
+      labs(x = "Category", y = "Total Revenue", fill = "Category") +
       theme_minimal()
     
     ggplotly(plot)
   })
   
   # DAILY REVENUE PLOT
-  output$revenuePlot_Income<- renderPlotly({
+  output$revenuePlot_Income <- renderPlotly({
     query <- sprintf("
       SELECT DATE(TransactionDate) AS Day, SUM(TotalAmount) AS TotalRevenue
       FROM Transactions
@@ -277,8 +313,9 @@ server <- function(input, output, session) {
     
     data <- dbGetQuery(connect2DB, query)
     
+    # Object for revenue plot
     revenue_plot <- ggplot(data, aes(x = as.Date(Day), y = TotalRevenue)) +
-      geom_line(color = "#20C997") +
+      geom_line(color = "darkgreen") +
       labs(x = "Date", y = "Total Revenue") +
       theme_minimal() +
       theme(axis.text.x = element_text(angle = 45, hjust = 1))
@@ -305,27 +342,51 @@ server <- function(input, output, session) {
   # BILLING ADDRESSES MAP
   output$customerMap_Customer <- renderLeaflet({
     query <- "
-      SELECT CustomerID, Latitude, Longitude 
-      FROM Customers
-      WHERE Latitude IS NOT NULL AND Longitude IS NOT NULL
-      "
+    SELECT c.CustomerID, c.Latitude, c.Longitude, SUM(t.TotalAmount) AS TotalSpent 
+    FROM Customers c
+    JOIN Transactions t ON c.CustomerID = t.CustomerID
+    WHERE Latitude IS NOT NULL AND Longitude IS NOT NULL
+    GROUP BY c.CustomerID, c.Latitude, c.Longitude
+    "
     customer_locations <- dbGetQuery(connect2DB, query)
     
     customer_locations$Latitude <- as.numeric(customer_locations$Latitude)
     customer_locations$Longitude <- as.numeric(customer_locations$Longitude)
+    customer_locations$TotalSpent <- as.numeric(customer_locations$TotalSpent)
+    
+    max_radius <- 30
+    min_radius <- 8
+    
+    customer_locations$ScaledRadius <- scales::rescale(
+      customer_locations$TotalSpent, to = c(min_radius, max_radius)
+    )
+    
+    color_palette <- colorNumeric(
+      palette = viridisLite::viridis(9),
+      domain = customer_locations$TotalSpent
+    )
     
     # Leaflet map
     leaflet(customer_locations) %>%
       addTiles() %>%
       addCircleMarkers(
         ~Longitude, ~Latitude,
-        label = ~paste("Customer ID:", CustomerID),
-        radius = 8,
-        color = "#9d00ff",
+        label = ~paste("Customer ID:", CustomerID, "Total Spent:", TotalSpent),
+        radius = ~ScaledRadius,
+        color = ~color_palette(TotalSpent),
+        fillColor = ~color_palette(TotalSpent),
         fillOpacity = 0.6
       ) %>%
-      setView(lng = -105.9378, lat = 35.6870, zoom = 12)
+      addLegend(
+        "bottomright",
+        pal = color_palette,
+        values = ~TotalSpent,
+        title = "Total Spent",
+        labFormat = labelFormat(prefix = "$")
+      ) %>%
+      setView(lng = -105.9378, lat = 35.6870, zoom = 13) # Ensure %>% is here
   })
+  
 
   
   # SUPPLIERS PAGE------------------------------
@@ -340,9 +401,10 @@ server <- function(input, output, session) {
     
     data <- dbGetQuery(connect2DB, query)
     
-    plot <- ggplot(data, aes(x = SupplierName, y = ProductCount)) +
-      geom_bar(stat = "identity", fill = "#A3E3CF") +
-      labs(x = "Supplier", y = "Product Count", title = "Product Count by Supplier") +
+    plot <- ggplot(data, aes(x = SupplierName, y = ProductCount, fill = ProductCount, label = ProductCount)) +
+      geom_bar(stat = "identity") +
+      scale_fill_viridis_c(option = "viridis", direction = 1) +
+      labs(x = "Supplier", y = "Product Count", title = "Product Count by Supplier", fill = "Product Count") +
       theme_minimal() +
       theme(axis.text.x = element_text(angle = 45, hjust = 1))
     
@@ -362,7 +424,7 @@ server <- function(input, output, session) {
       SELECT DATE(TransactionDate) AS TransactionDate, SUM(TotalAmount) AS TotalSales
       FROM Transactions
       GROUP BY DATE(TransactionDate)" 
-    
+     
     daily_sales <- dbGetQuery(connect2DB, query)
     
     # Prophet requires columns "ds" (dates) and "y" (values to forecast)
@@ -390,8 +452,10 @@ server <- function(input, output, session) {
     forecast_data$Type <- "Forecast"
     combined_data <- rbind(daily_sales[, c("ds", "y", "Type")], forecast_data[, c("ds", "y", "Type")])
     
+    palette <- brewer.pal(n = 3, name = "Dark2")
+    
     # Plot of Actual and Forecast Sales
-    plot <- plot_ly(combined_data, x = ~ds, y = ~y, color = ~Type, colors = c("#8497B5", "#FFB347")) %>%
+    plot <- plot_ly(combined_data, x = ~ds, y = ~y, color = ~Type, colors = palette) %>%
       add_lines() %>%
       layout(
         title = "Daily Sales Forecast for 2025",
