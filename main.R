@@ -12,6 +12,9 @@ library(forecast)
 library(dplyr)
 library(prophet)
 library(bslib)
+library(viridis)
+library(RColorBrewer)
+library(scales)
 
 # Connection to database 
 connect2DB <- dbConnect(SQLite(), dbname = "data/Supermarket_up.db")
